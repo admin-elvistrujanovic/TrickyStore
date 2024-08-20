@@ -90,15 +90,15 @@ com.google.android.gms!
 
 ## Global Implementation Support
 
-Tricky Store will also hack the leaf certificate by default for global feature. On TEE broken devices this method will not work. You can add a `!` after keyword "all" to enable generate certificate support for **ALL PACKAGES**
+Tricky Store will also hack the leaf certificate by default for global feature. On TEE broken devices this method will not work. You can add a `!` after keyword `all` to enable generate certificate support for **ALL PACKAGES**
 
 For example:
 
 ```
 # target.txt
-# use leaf certificate hacking mode for KeyAttestation App
+# use leaf certificate hacking mode for all packages
 all
-# use certificate generating mode for gms
+# use certificate generating mode for all packages
 all!
 ```
 
