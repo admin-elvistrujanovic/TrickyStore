@@ -1,4 +1,4 @@
-# Fork Warning
+## Fork Warning
 
 This code is in early stages and from an older version of Tricky Store since Tricky Store is now closed-source. This code needs fixes and future improvements - if your're dev, feel free to use it as an base (start point) but if you're an end/advanced user, please backup your data and be prepared for facing bootloops.
 
@@ -12,7 +12,7 @@ A trick of keystore. **Android 12 or above is required**.
 
 1. Flash this module and reboot.  
 2. For more than DEVICE integrity, put an unrevoked hardware keybox.xml at `/data/adb/tricky_store/keybox.xml` (Optional).  
-3. Customize target packages at `/data/adb/tricky_store/target.txt` (Optional).  
+3. Customize target packages at `/data/adb/tricky_store/target.txt` (Required if you don't stick with "all" keyword).  
 4. Enjoy!  
 
 **All configuration files will take effect immediately.**
@@ -88,6 +88,20 @@ io.github.vvb2060.keyattestation
 com.google.android.gms!
 ```
 
+## Global Implementation Support
+
+Tricky Store will also hack the leaf certificate by default for global feature. On TEE broken devices this method will not work. You can add a `!` after keyword "all" to enable generate certificate support for **ALL PACKAGES**
+
+For example:
+
+```
+# target.txt
+# use leaf certificate hacking mode for KeyAttestation App
+all
+# use certificate generating mode for gms
+all!
+```
+
 ## TODO
 
 - Support App Attest Key.
@@ -103,3 +117,5 @@ PR is welcomed.
 - [BootloaderSpoofer](https://github.com/chiteroman/BootloaderSpoofer)
 - [KeystoreInjection](https://github.com/aviraxp/Zygisk-KeystoreInjection)
 - [LSPosed](https://github.com/LSPosed/LSPosed)
+- [Main dev 5ec1cff](https://github.com/5ec1cff) 
+- [Module Source](https://github.com/5ec1cff/TrickyStore) 
