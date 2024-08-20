@@ -1,3 +1,7 @@
+# Warning
+**This is in early stages, it needs fixes and time - try it at your own risk, it could bootloop your device.**
+
+
 # Tricky Store
 
 A trick of keystore. **Android 12 or above is required**.
