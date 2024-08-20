@@ -1,52 +1,58 @@
 package io.github.a13e300.tricky_store
 
-import android.content.pm.IPackageManager
-import android.content.pm.PackageManager
-import android.content.pm.PackageInfo
 import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.os.FileObserver
 import android.os.ServiceManager
 import io.github.a13e300.tricky_store.keystore.CertHack
 import java.io.File
 
+// Ensure IPackageManager is imported correctly
+import android.content.pm.IPackageManager
+
 object Config {
-    private lateinit var context: Context
-
-    fun initialize(context: Context) {
-        this.context = context
-    }
-
     private val hackPackages = mutableSetOf<String>()
     private val generatePackages = mutableSetOf<String>()
 
-    private fun updateTargetPackages(f: File?) = runCatching {
+    private fun getAllInstalledPackages(context: Context): List<String> {
+        return try {
+            val packageManager = context.packageManager
+            val packages: List<PackageInfo> = packageManager.getInstalledPackages(PackageManager.GET_META_DATA)
+            packages.map { it.packageName }
+        } catch (e: Exception) {
+            Logger.e("Error getting installed packages: ${e.message}")
+            emptyList()
+        }
+    }
+
+    private fun updateTargetPackages(f: File?, context: Context) = runCatching {
         hackPackages.clear()
         generatePackages.clear()
-
-        val lines = f?.readLines() ?: return@runCatching
-
-        if (lines.any { it.trim() == "all" }) {
-            val packageManager = context.packageManager
-            val installedApps = packageManager.getInstalledPackages(0).map { pkgInfo: PackageInfo -> pkgInfo.packageName }
-            hackPackages.addAll(installedApps)
-        } else {
-            lines.forEach { line ->
-                if (line.isNotBlank() && !line.startsWith("#")) {
-                    val n = line.trim()
-                    if (n.endsWith("!"))
-                        generatePackages.add(n.removeSuffix("!").trim())
-                    else
-                        hackPackages.add(n)
+        f?.readLines()?.forEach { line ->
+            if (line.isNotBlank() && !line.startsWith("#")) {
+                val trimmedLine = line.trim()
+                if (trimmedLine.startsWith("all")) {
+                    val allPackages = getAllInstalledPackages(context)
+                    hackPackages.addAll(allPackages)
+                    if (trimmedLine.endsWith("!")) {
+                        generatePackages.addAll(allPackages)
+                    }
+                } else {
+                    if (trimmedLine.endsWith("!")) {
+                        generatePackages.add(trimmedLine.removeSuffix("!").trim())
+                    } else {
+                        hackPackages.add(trimmedLine)
+                    }
                 }
             }
         }
-
         Logger.i("update hack packages: $hackPackages, generate packages=$generatePackages")
     }.onFailure {
         Logger.e("failed to update target files", it)
     }
 
-    private fun updateKeyBox(f: File?) = runCatching {
+    private fun updateKeyBox(f: File?, context: Context) = runCatching {
         CertHack.readFromXml(f?.readText())
     }.onFailure {
         Logger.e("failed to update keybox", it)
@@ -57,7 +63,8 @@ object Config {
     private const val KEYBOX_FILE = "keybox.xml"
     private val root = File(CONFIG_PATH)
 
-    object ConfigObserver : FileObserver(root, CLOSE_WRITE or DELETE or MOVED_FROM or MOVED_TO) {
+    // Modified ConfigObserver to accept context
+    class ConfigObserver(private val context: Context) : FileObserver(root, CLOSE_WRITE or DELETE or MOVED_FROM or MOVED_TO) {
         override fun onEvent(event: Int, path: String?) {
             path ?: return
             val f = when (event) {
@@ -66,17 +73,17 @@ object Config {
                 else -> return
             }
             when (path) {
-                TARGET_FILE -> updateTargetPackages(f)
-                KEYBOX_FILE -> updateKeyBox(f)
+                TARGET_FILE -> updateTargetPackages(f, context) // Pass context here
+                KEYBOX_FILE -> updateKeyBox(f, context) // Pass context here
             }
         }
     }
 
-    fun initialize() {
+    fun initialize(context: Context) {
         root.mkdirs()
         val scope = File(root, TARGET_FILE)
         if (scope.exists()) {
-            updateTargetPackages(scope)
+            updateTargetPackages(scope, context) // Pass context here
         } else {
             Logger.e("target.txt file not found, please put it to $scope !")
         }
@@ -84,9 +91,9 @@ object Config {
         if (!keybox.exists()) {
             Logger.e("keybox file not found, please put it to $keybox !")
         } else {
-            updateKeyBox(keybox)
+            updateKeyBox(keybox, context) // Pass context here
         }
-        ConfigObserver.startWatching()
+        ConfigObserver(context).startWatching() // Pass context here
     }
 
     private var iPm: IPackageManager? = null
@@ -109,4 +116,5 @@ object Config {
         val ps = getPm()?.getPackagesForUid(callingUid)
         ps?.any { it in generatePackages }
     }.onFailure { Logger.e("failed to get packages", it) }.getOrNull() ?: false
+
 }
