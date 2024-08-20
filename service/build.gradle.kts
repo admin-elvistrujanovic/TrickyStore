@@ -80,8 +80,10 @@ android {
 
 dependencies {
     compileOnly(project(":stub"))
-    compileOnly(libs.annotation)
+    // compileOnly(libs.annotation) Disabled for testing purposes
     implementation(libs.bcpkix.jdk18on)
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.annotation:annotation:1.8.0")
 }
 
 afterEvaluate {
